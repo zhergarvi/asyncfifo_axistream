@@ -3,41 +3,44 @@
 module async_fifo_tb;
 
     parameter WIDTH = 32;
-    parameter DEPTH = 4096;       //1024/2048/.../16384
+    parameter DEPTH = 1024;       //1024/2048/.../16384
 
 
     reg                  wr_clk = 0;
     reg                  wr_rst = 1;
     reg                  wr_en;
     reg  [WIDTH-1:0]     din = 0;
+//    wire                full;
 
     reg                  rd_clk = 0;
     reg                  rd_rst = 1;
+//    reg                  rd_en;
     wire [WIDTH-1:0]     dout;
+//    wire                empty;
     
     wire                 m_axis_tvalid;
-    reg                  m_axis_tready;
     wire [(WIDTH/8)-1 : 0]                 m00_axis_tstrb;
     wire                 m_axis_tlast;
+    reg ready;
     
     reg [31:0] count;
 
-    always #9  wr_clk = ~wr_clk;
-    always #7  rd_clk = ~rd_clk;
+    always #10  wr_clk = ~wr_clk;      // 100 MHz write clock
+    always #16.276  rd_clk = ~rd_clk;      // ~61.44 MHz read clock (different domain)
 
 
-    top #(
+    axi_stream_custom_ip_v3_0 #(
         .WIDTH(WIDTH),
         .DEPTH(DEPTH)
     ) dut (
         .din_clk   (wr_clk),
-        .din_rstn   (wr_rst),
+        .din_resetn   (wr_rst),
         .din_valid (wr_en),
         .din      (din),
 
         .m00_axis_aclk   (rd_clk),
         .m00_axis_aresetn   (rd_rst),
-        .m00_axis_tready(1'b1),
+        .m00_axis_tready(ready),
         .m00_axis_tvalid(m_axis_tvalid),
 		.m00_axis_tdata(dout),
 		.m00_axis_tstrb(m00_axis_tstrb),
@@ -63,8 +66,8 @@ module async_fifo_tb;
         $display("====== FIFO TEST STARTED ======");
 //        rd_en <= 0;
         wr_en <= 0;
+        ready <= 1;
         count <= 32'h0;
-        m_axis_tready <= 1'b1;
         apply_reset();
 //        m00_axis_tready <= 1;
         
@@ -149,8 +152,55 @@ module async_fifo_tb;
         
         @(posedge rd_clk);
         wr_en <= 0;
-        repeat(10)@(posedge rd_clk);
+        repeat(2000)@(posedge rd_clk);
 //        rd_en = 0;
+        
+        ready <= 0;
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 1;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 0;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 1;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 0;
+            din <= i + 32'h1000;
+        end
+        
+        ready <= 1;
+        repeat(2000)@(posedge rd_clk);
+//        rd_en = 0;
+        
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 1;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 0;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 1;
+            din <= i + 32'h1000;
+        end
+        for (i = 0; i < DEPTH; i = i + 1) begin
+            @(posedge wr_clk);
+            wr_en <= 0;
+            din <= i + 32'h1000;
+        end
         
         repeat(1000)@(posedge rd_clk);
         $display("====== FIFO TEST COMPLETED SUCCESSFULLY ======");
