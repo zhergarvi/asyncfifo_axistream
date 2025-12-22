@@ -36,6 +36,10 @@ module axi_stream #(
 	wire m_axis_tlast_reg;
 	wire write_burst_done;
 
+	reg  	axis_tlast;
+	wire  	axis_tvalid;
+	reg [7:0] count;
+	
 	assign rd_clk = ACLK;
 	assign rd_rst = ~ARESETn;
 	assign wr_rst = ~wr_rstn;
@@ -57,17 +61,11 @@ module axi_stream #(
 		.empty(fifo_empty)
 	);
 
-	always @(posedge rd_clk or posedge rd_rst) begin
-		if (rd_rst) begin
-			M_AXIS_TVALID <= 1'b0;
-		end else begin
-			M_AXIS_TVALID <= read_start_flag && ~fifo_empty;
-		end
-	end
+	assign axis_tvalid = read_start_flag && !fifo_empty;
 
 	negedge_detection negedge_detection_inst (.clk(wr_clk),.rst(wr_rst),.in(wr_en),.out(write_burst_done));
 	
-	posedge_detection posedge_detection_inst (.clk(rd_clk),.rst(rd_rst),.in(fifo_empty),.out(M_AXIS_TLAST));
+	// posedge_detection posedge_detection_inst (.clk(rd_clk),.rst(rd_rst),.in(fifo_empty),.out(M_AXIS_TLAST));
 	
 	synchronizer #(.DATA_WIDTH(0)) u_sync_tlast_trigger_0 (.dest_clk(rd_clk),.dest_rst(rd_rst),.data_in(wr_req),.data_out(wr_req_w));
 
@@ -106,16 +104,26 @@ module axi_stream #(
 		end
 	end
 
-	always @(posedge rd_clk) begin		
-		if (read_start_flag && M_AXIS_TVALID && M_AXIS_TREADY) begin
-			rd_en <= 1;
-		end 
-		else if (fifo_empty) begin
-			rd_en <= 0;
+	assign rd_en = read_start_flag && axis_tvalid && M_AXIS_TREADY;
+
+	always @(posedge rd_clk or posedge rd_rst) begin
+		if (rd_rst) begin
+			count      <= 8'd0;
+			axis_tlast <= 1'b0;
+		end else begin
+			if (rd_en) begin
+				if (count == 8'd255) begin
+					count <= 8'd0;
+				end else begin
+					count <= count + 1;
+				end
+				axis_tlast <= (count == 8'd254);
+			end
 		end
 	end
 
 	assign M_AXIS_TDATA = fifo_dout;
-
+	assign M_AXIS_TLAST	= axis_tlast;
+	assign M_AXIS_TVALID = axis_tvalid;
 	assign M_AXIS_TSTRB	= {(DATA_WIDTH/8){1'b1}};
 endmodule
