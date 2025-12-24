@@ -1,9 +1,15 @@
 ## Async FIFO and AXI Stream
-This is verilog design of asynchronous fifo with axi stream. Data is written in fifo at write clock domain and read at the read clock domain, data is transmitted using axi stream interface. 
+This repository contains a Verilog implementation of an **Asynchronous FIFO** with an **AXI-Stream interface**. It is designed to facilitate high-speed data transfer across different clock domains, such as streaming FFT output data from Programmable Logic (PL) to the Processor System (PS).
 
-The logic detects the negedge of `wr_en` of async fifo. Once the data is written in fifo, the logic create a pulse on the negedge of `wr_en` and passes this pulse to read clock domain using request and ackowledge flags and it makes `read_start_flag` high. Then `rd_en` becomes high.
+Data is pushed into the FIFO at the frequency of the source logic (e.g., the FFT sampling rate). The system monitors the `wr_en` signal. When the write process is done, the logic detects the falling edge of the `wr_en`.
 
-This project is for transmitting the fft output data from PL to PS for N number of indexes.
+Once the negedge of `wr_en` is detected:
+  - A pulse is generated in the Write clock domain. 
+  - A Request/Acknowledge mechanism synchronizes this pulse into the Read clock domain. 
+  - This ensures that the Read logic is only activated once a complete packet of data is safe and available.
+  - The `read_start_flag` is asserted.
+  - The `rd_en` (Read Enable) signal goes high.
+  - Data is streamed out via the **AXI-Stream interface** to the PS (Processor System) for software-level processing.
 
 ### Project Structure
 
