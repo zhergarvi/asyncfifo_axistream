@@ -9,7 +9,7 @@ Once the negedge of `wr_en` is detected:
   - This ensures that the Read logic is only activated once a complete packet of data is safe and available.
   - The `read_start_flag` is asserted.
   - The `rd_en` (Read Enable) signal goes high.
-  - Data is streamed out via the **AXI-Stream interface** to the PS (Processor System) for software-level processing.
+  - Data is streamed out via the **AXI-Stream interface** to the PS for software-level processing.
 
 ### Project Structure
 
