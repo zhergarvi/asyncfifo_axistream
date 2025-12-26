@@ -67,9 +67,9 @@ module axi_stream #(
 	
 	// posedge_detection posedge_detection_inst (.clk(rd_clk),.rst(rd_rst),.in(fifo_empty),.out(M_AXIS_TLAST));
 	
-	synchronizer #(.DATA_WIDTH(0)) u_sync_tlast_trigger_0 (.dest_clk(rd_clk),.dest_rst(rd_rst),.data_in(wr_req),.data_out(wr_req_w));
+	synchronizer #(.DATA_WIDTH(0)) u_sync_tlast_trigger_0 (.clk(rd_clk),.rst(rd_rst),.data_in(wr_req),.data_out(wr_req_w));
 
-	synchronizer #(.DATA_WIDTH(0)) u_sync_tlast_trigger_1 (.dest_clk(wr_clk),.dest_rst(wr_rst),.data_in(rd_ack),.data_out(rd_ack_w));
+	synchronizer #(.DATA_WIDTH(0)) u_sync_tlast_trigger_1 (.clk(wr_clk),.rst(wr_rst),.data_in(rd_ack),.data_out(rd_ack_w));
 
 	// Generate request
 	always @(posedge wr_clk or posedge wr_rst) begin

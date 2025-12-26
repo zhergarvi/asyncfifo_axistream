@@ -93,8 +93,8 @@ module async_fifo #(
 	synchronizer #(
 		.DATA_WIDTH(ADDR_WIDTH)
 	) u_sync_r_to_w (
-		.dest_clk(wr_clk),
-		.dest_rst(wr_rst),
+		.clk(wr_clk),
+		.rst(wr_rst),
 		.data_in(r_ptr_gray),
 		.data_out(r_ptr_sync_wclk)
 	);
@@ -102,8 +102,8 @@ module async_fifo #(
 	synchronizer #(
 		.DATA_WIDTH(ADDR_WIDTH)
 	) u_sync_w_to_r (
-		.dest_clk(rd_clk),
-		.dest_rst(rd_rst),
+		.clk(rd_clk),
+		.rst(rd_rst),
 		.data_in(w_ptr_gray),
 		.data_out(w_ptr_sync_rclk)
 	);

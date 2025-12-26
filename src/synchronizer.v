@@ -2,8 +2,8 @@
 module synchronizer #(
 		parameter DATA_WIDTH = 1
 	) (
-		input  dest_clk,
-		input  dest_rst,
+		input  clk,
+		input  rst,
 		input  [DATA_WIDTH:0] data_in,
 		output [DATA_WIDTH:0] data_out
 	);
@@ -12,8 +12,8 @@ module synchronizer #(
 	reg [DATA_WIDTH:0] sync_reg2;
 	reg [DATA_WIDTH:0] sync_reg3;
 
-	always @(posedge dest_clk or posedge dest_rst) begin
-		if (dest_rst) begin
+	always @(posedge clk or posedge rst) begin
+		if (rst) begin
 			sync_reg1 <= 0;
 			sync_reg2 <= 0;
 			sync_reg3 <= 0;
