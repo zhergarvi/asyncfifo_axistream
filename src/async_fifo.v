@@ -15,13 +15,8 @@ module async_fifo #(
 		input  						rd_rst,
 		output reg [DATA_WIDTH-1:0] dout,
 		input  						rd_en,
-		output wire 				empty,
-		output  [DATA_WIDTH-1:0] 	din_test,
-		output [ADDR_WIDTH:0] w_ptr_bin,
-		output [ADDR_WIDTH:0] r_ptr_bin,
-		output wr_en_test
+		output wire 				empty
 	);
-
 
 	reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
 
@@ -36,12 +31,9 @@ module async_fifo #(
 
 	wire [ADDR_WIDTH:0] w_ptr_bin_next;
 	wire [ADDR_WIDTH:0] r_ptr_bin_next;
-
-	assign wr_en_test = wr_en;
 	
 	assign w_ptr_bin_next = w_ptr_bin + 1;
 	always @(posedge wr_clk or posedge wr_rst) begin
-		
 		if (wr_rst) begin
 			w_ptr_bin <= {ADDR_WIDTH+1{1'b0}};
 			w_ptr_gray <= {ADDR_WIDTH+1{1'b0}};
@@ -53,7 +45,6 @@ module async_fifo #(
 
 	assign r_ptr_bin_next = r_ptr_bin + 1;
 	always @(posedge rd_clk or posedge rd_rst) begin
-		
 		if (rd_rst) begin
 			r_ptr_bin <= {ADDR_WIDTH+1{1'b0}};
 			r_ptr_gray <= {ADDR_WIDTH+1{1'b0}};
@@ -63,28 +54,25 @@ module async_fifo #(
 		end
 	end
 
-	// assign full = (w_ptr_gray[ADDR_WIDTH-1] != r_ptr_sync_wclk[ADDR_WIDTH-1]) &&
-	// 				(w_ptr_gray[ADDR_WIDTH-2:0] == r_ptr_sync_wclk[ADDR_WIDTH-2:0]);
-
-	// assign full = ( r_ptr_sync_wclk == {~w_ptr_gray[ADDR_WIDTH:ADDR_WIDTH-1],w_ptr_gray[ADDR_WIDTH-2:0]});
-
 	assign full = (w_ptr_gray[ADDR_WIDTH]   != r_ptr_sync_wclk[ADDR_WIDTH]) &&
               (w_ptr_gray[ADDR_WIDTH-1] != r_ptr_sync_wclk[ADDR_WIDTH-1]) &&
               (w_ptr_gray[ADDR_WIDTH-2:0] == r_ptr_sync_wclk[ADDR_WIDTH-2:0]);
 
 	assign empty = (r_ptr_gray == w_ptr_sync_rclk);
 
-
 	// --- Memory Core Logic ---
-	always @(posedge wr_clk) begin
-		if (wr_en && !full) begin
+	always @(posedge wr_clk or posedge wr_rst) begin
+		if (wr_rst) begin
+			mem[w_ptr_bin[ADDR_WIDTH-1:0]] <= {DATA_WIDTH{1'b0}};
+		end
+		else if (wr_en && !full) begin
 			mem[w_ptr_bin[ADDR_WIDTH-1:0]] <= din;
 		end
 	end
 
-	always @(posedge rd_clk) begin
+	always @(posedge rd_clk or posedge rd_rst) begin
 		if (rd_rst) begin
-			dout <= 32'h0; end
+			dout <= {DATA_WIDTH{1'b0}}; end
 		else if (rd_en && !empty) begin
 			dout <= mem[r_ptr_bin[ADDR_WIDTH-1:0]];
 		end
@@ -107,7 +95,5 @@ module async_fifo #(
 		.data_in(w_ptr_gray),
 		.data_out(w_ptr_sync_rclk)
 	);
-
-	assign din_test = din;
 
 endmodule
